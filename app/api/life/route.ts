@@ -62,10 +62,10 @@ export async function GET(request: NextRequest) {
         </div>
 
         <svg width={totalWidth} height={totalHeight} viewBox={`0 0 ${totalWidth} ${totalHeight}`}>
-          {/* Подписи возраста слева (0 = 1997, 10 = 2007...) */}
+          {/* Подписи возраста слева (0 напротив 1997, 10 напротив 2007...) */}
           {Array.from({ length: 10 }).map((_, d) => {
             const label = d * 10;
-            const y = TOP_MARGIN + d * 10 * CELL + CELL / 2;
+            const y = TOP_MARGIN + (d * 10) * CELL + CELL / 2;
             return (
               <text
                 key={d}
@@ -103,9 +103,6 @@ export async function GET(request: NextRequest) {
         </svg>
       </div>
     ),
-    {
-      width,
-      height,
-    }
+    { width, height }
   );
 }
