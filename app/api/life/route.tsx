@@ -1,16 +1,15 @@
-import { ImageResponse } from "@vercel/og";
-import type { NextRequest } from "next/server";
+import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   return new ImageResponse(
     (
       <div
         style={{
           width: "100%",
           height: "100%",
-          background: "#111",
+          background: "#000",
           color: "#fff",
           display: "flex",
           alignItems: "center",
@@ -19,7 +18,7 @@ export async function GET(_req: NextRequest) {
           fontWeight: 700,
         }}
       >
-        TEST OK
+        Life Balance — test ok
       </div>
     ),
     {
