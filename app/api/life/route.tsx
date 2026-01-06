@@ -1,60 +1,49 @@
-import { ImageResponse } from "@vercel/og";
+import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
 
 export const runtime = "edge";
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = req.nextUrl;
+export async function GET(request: NextRequest) {
+  const width = 1200;
+  const height = 2556;
 
-  // Размер под iPhone 15 (по умолчанию, но можно менять через параметры)
-  const width = Number(searchParams.get("width") || "1179");
-  const height = Number(searchParams.get("height") || "2556");
-
-  // --- НАСТРОЙКИ ---
   const BIRTH_DAY = 4;
-  const BIRTH_MONTH = 11; // декабрь (0-based)
-  const BIRTH_YEAR = 1996;
+  const BIRTH_MONTH = 11;
+  const START_YEAR = 1997;
 
-  // Начинаем сетку с 01.01.1997
-  const GRID_START = new Date(1997, 0, 1);
   const today = new Date();
+  const startDate = new Date(START_YEAR, 0, 1);
+  const msPerWeek = 1000 * 60 * 60 * 24 * 7;
+  const weeksLived = Math.floor((today.getTime() - startDate.getTime()) / msPerWeek);
 
-  const MS_WEEK = 1000 * 60 * 60 * 24 * 7;
-  const weeksFromStart = Math.floor(
-    (today.getTime() - GRID_START.getTime()) / MS_WEEK
-  );
+  const COLS = 52;
+  const ROWS = 90;
 
-  const COLS = 52;   // недель в году
-  const ROWS = 90;   // летовая сетка
-
-  const DOT_RADIUS = 4.5;
-  const GAP = 3;
-  const CELL = DOT_RADIUS * 2 + GAP;
-
-  // safe-area отступы под вырез / home-indicator
-  const TOP_MARGIN = 180;
-  const BOTTOM_MARGIN = 140;
-  const LEFT_MARGIN = 90;
-  const RIGHT_MARGIN = 40;
-
-  const gridWidth = COLS * CELL;
-  const gridHeight = ROWS * CELL;
-
-  const totalWidth = LEFT_MARGIN + gridWidth + RIGHT_MARGIN;
-  const totalHeight = TOP_MARGIN + gridHeight + BOTTOM_MARGIN;
-
-  // --- посчитать недели с ДР ---
   const birthdayWeeks = new Set<number>();
-
   for (let age = 0; age < ROWS; age++) {
-    const year = 1997 + age; // т.к. таблица с 1997
+    const year = START_YEAR + age;
     const bday = new Date(year, BIRTH_MONTH, BIRTH_DAY);
+    birthdayWeeks.add(Math.floor((bday.getTime() - startDate.getTime()) / msPerWeek));
+  }
 
-    const w = Math.floor(
-      (bday.getTime() - GRID_START.getTime()) / MS_WEEK
+  const cells = [];
+  for (let w = 0; w < COLS * ROWS; w++) {
+    let bg = "#e5e5e5";
+    if (w < weeksLived) bg = birthdayWeeks.has(w) ? "#d32f2f" : "#000";
+    else if (w === weeksLived) bg = "#f57c00";
+    else if (birthdayWeeks.has(w)) bg = "#d32f2f";
+
+    cells.push(
+      <div
+        key={w}
+        style={{
+          width: 10,
+          height: 10,
+          background: bg,
+          borderRadius: "50%",
+        }}
+      />
     );
-
-    if (w >= 0) birthdayWeeks.add(w);
   }
 
   return new ImageResponse(
@@ -63,67 +52,30 @@ export async function GET(req: NextRequest) {
         style={{
           width: "100%",
           height: "100%",
-          background: "#ffffff",
           display: "flex",
-          justifyContent: "center",
-          alignItems: "flex-start",
+          flexDirection: "column",
+          alignItems: "center",
+          background: "#fff",
+          paddingTop: 180,
+          paddingBottom: 140,
           fontFamily: "system-ui, sans-serif",
         }}
       >
-        <svg
-          width={totalWidth}
-          height={totalHeight}
-          viewBox={`0 0 ${totalWidth} ${totalHeight}`}
+        <div style={{ fontSize: 36, fontWeight: "bold", marginBottom: 40 }}>
+          Life in Weeks
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${COLS}, 14px)`,
+            gap: "3px",
+            marginLeft: 90,
+          }}
         >
-          {/* ЛЕВЫЕ МЕТКИ КАЖДЫЕ 10 ЛЕТ */}
-          {Array.from({ length: Math.ceil(ROWS / 10) }).map((_, i) => {
-            const age = i * 10;
-            const y = TOP_MARGIN + age * CELL + CELL / 2;
+          {cells}
+        </div>
 
-            return (
-              <text
-                key={age}
-                x={LEFT_MARGIN - 16}
-                y={y}
-                textAnchor="end"
-                fontSize="22"
-                fill="#555"
-                fontWeight="600"
-              >
-                {age}
-              </text>
-            );
-          })}
-
-          {/* ТОЧКИ-НЕДЕЛИ */}
-          {Array.from({ length: COLS * ROWS }).map((_, w) => {
-            const row = Math.floor(w / COLS);
-            const col = w % COLS;
-
-            const cx = LEFT_MARGIN + col * CELL + CELL / 2;
-            const cy = TOP_MARGIN + row * CELL + CELL / 2;
-
-            let color = "#e5e5e5"; // будущее
-
-            if (w < weeksFromStart)
-              color = birthdayWeeks.has(w) ? "#d32f2f" : "#000000";
-            else if (w === weeksFromStart)
-              color = "#f57c00"; // текущая неделя
-            else if (birthdayWeeks.has(w))
-              color = "#d32f2f";
-
-            return (
-              <circle
-                key={w}
-                cx={cx}
-                cy={cy}
-                r={DOT_RADIUS}
-                fill={color}
-                filter="url(#soft)"
-              />
-            );
-          })}
-        </svg>
       </div>
     ),
     { width, height }
