@@ -1,99 +1,75 @@
-import { ImageResponse } from "next/og";
-import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-export const runtime = "edge";
+const BIRTHDATE = new Date("1996-12-04T00:00:00");
 
-export async function GET(request: NextRequest) {
-  const width = 1200;
-  const height = 2556;
+function getLifeProgress() {
+  const now = new Date();
 
-  const BIRTH_DAY = 4;
-  const BIRTH_MONTH = 11;
-  const birthDate = new Date(1996, BIRTH_MONTH, BIRTH_DAY); // 04.12.1996
+  const diffMs = now.getTime() - BIRTHDATE.getTime();
+  const weeksLived = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7));
 
-  const today = new Date();
-  const msPerWeek = 1000 * 60 * 60 * 24 * 7;
-  const weeksLived = Math.floor((today.getTime() - birthDate.getTime()) / msPerWeek);
+  const years = Math.floor(weeksLived / 52);
+  const weeksAfterBirthday = weeksLived % 52;
 
-  const COLS = 52;
-  const ROWS = 90;
+  return { years, weeksAfterBirthday };
+}
 
-  const birthdayWeeks = new Set<number>();
-  for (let age = 0; age < ROWS; age++) {
-    const year = 1996 + age;
-    const bday = new Date(year, BIRTH_MONTH, BIRTH_DAY);
-    birthdayWeeks.add(Math.floor((bday.getTime() - birthDate.getTime()) / msPerWeek));
+function renderGrid({
+  years,
+  weeksAfterBirthday,
+}: {
+  years: number;
+  weeksAfterBirthday: number;
+}) {
+  const cols = 52;
+  const cell = 22;
+  const gap = 6;
+
+  const startX = 80;
+  const startY = 120;
+
+  let svg = "";
+
+  for (let y = 0; y <= 90; y++) {
+    for (let w = 0; w < cols; w++) {
+      const x = startX + w * (cell + gap);
+      const yy = startY + y * (cell + gap);
+
+      const filled =
+        y < years || (y === years && w <= weeksAfterBirthday);
+
+      svg += `
+        <circle
+          cx="${x}"
+          cy="${yy}"
+          r="${cell / 2}"
+          fill="${filled ? "#ff4b4b" : "#d3d3d3"}"
+        />
+      `;
+    }
   }
 
-  const circles = [];
-  const cell = 14;
-  const r = 5;
+  return svg;
+}
 
-  for (let i = 0; i < COLS * ROWS; i++) {
-    const row = Math.floor(i / COLS);
-    const col = i % COLS;
-    let fill = "#e5e5e5";
+export async function GET() {
+  const { years, weeksAfterBirthday } = getLifeProgress();
 
-    if (i < weeksLived) fill = birthdayWeeks.has(i) ? "#d32f2f" : "#000";
-    else if (i === weeksLived) fill = "#f57c00";
-    else if (birthdayWeeks.has(i)) fill = "#d32f2f";
+  const svg = `
+  <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="2000">
+    <rect width="100%" height="100%" fill="white" />
 
-    circles.push(
-      <circle
-        key={i}
-        cx={col * cell}
-        cy={row * cell}
-        r={r}
-        fill={fill}
-      />
-    );
-  }
+    <!-- отступ под часы -->
+    <g transform="translate(0, 300)">
+      ${renderGrid({ years, weeksAfterBirthday })}
+    </g>
+  </svg>
+  `;
 
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          background: "#fff",
-          paddingTop: 220,   // ← увеличил отступ сверху (под часы)
-          paddingBottom: 140,
-          fontFamily: "system-ui, sans-serif",
-        }}
-      >
-        {/* Заголовок убрал полностью */}
-
-        <svg
-          width={COLS * cell}
-          height={ROWS * cell}
-          style={{ marginLeft: 90 }}
-        >
-          {/* Подписи возраста (0 напротив первой строки) */}
-          {Array.from({ length: 10 }).map((_, d) => {
-            const label = d * 10;
-            const y = d * 10 * cell + cell / 2 + 10; // ← подправил позицию Y, чтобы не поехало по диагонали
-            return (
-              <text
-                key={d}
-                x={LEFT_MARGIN - 10}
-                y={y}
-                textAnchor="end"
-                fontSize="20"
-                fill="#555"
-                fontWeight="500"
-              >
-                {label}
-              </text>
-            );
-          })}
-
-          {circles}
-        </svg>
-      </div>
-    ),
-    { width, height }
-  );
+  return new NextResponse(svg, {
+    headers: {
+      "Content-Type": "image/svg+xml",
+      "Cache-Control": "no-store",
+    },
+  });
 }
