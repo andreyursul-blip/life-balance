@@ -4,20 +4,20 @@ import type { NextRequest } from "next/server";
 export const runtime = "edge";
 
 export async function GET(request: NextRequest) {
-  const width = 1179;  // айфон 15 Pro
+  const width = 1200;
   const height = 2556;
 
   const BIRTH_DAY = 4;
-  const BIRTH_MONTH = 11; // 0-based, декабрь = 11
-  const START_YEAR = 1996; // начинаем с твоего дня рождения
+  const BIRTH_MONTH = 11;
+  const START_YEAR = 1996;
 
   const today = new Date();
-  const startDate = new Date(START_YEAR, BIRTH_MONTH, BIRTH_DAY);
+  const startDate = new Date(START_YEAR, 0, 1);
   const msPerWeek = 1000 * 60 * 60 * 24 * 7;
   const weeksLived = Math.floor((today.getTime() - startDate.getTime()) / msPerWeek);
 
-  const COLS = 52;  // недель в году
-  const ROWS = 90;  // лет
+  const COLS = 52;
+  const ROWS = 90;
 
   const birthdayWeeks = new Set<number>();
   for (let age = 0; age < ROWS; age++) {
@@ -26,42 +26,27 @@ export async function GET(request: NextRequest) {
     birthdayWeeks.add(Math.floor((bday.getTime() - startDate.getTime()) / msPerWeek));
   }
 
-  const cells = [];
-  for (let w = 0; w < COLS * ROWS; w++) {
-    let bg = "#000"; // черные для прожитых недель
-    if (w === weeksLived) bg = "#f57c00"; // текущая неделя оранжевая
-    if (birthdayWeeks.has(w)) bg = "#d32f2f"; // дни рождения красные
+  const circles = [];
+  const cell = 14;
+  const r = 5;
 
-    cells.push(
-      <div
-        key={w}
-        style={{
-          width: 10,
-          height: 10,
-          background: bg,
-          borderRadius: "50%",
-        }}
+  for (let i = 0; i < COLS * ROWS; i++) {
+    const row = Math.floor(i / COLS);
+    const col = i % COLS;
+    let fill = "#e5e5e5";
+
+    if (i < weeksLived) fill = birthdayWeeks.has(i) ? "#d32f2f" : "#000";
+    else if (i === weeksLived) fill = "#f57c00";
+    else if (birthdayWeeks.has(i)) fill = "#d32f2f";
+
+    circles.push(
+      <circle
+        key={i}
+        cx={col * cell}
+        cy={row * cell}
+        r={r}
+        fill={fill}
       />
-    );
-  }
-
-  // Добавляем подписи лет слева
-  const yearLabels = [];
-  for (let y = 0; y <= ROWS; y += 10) {
-    yearLabels.push(
-      <div
-        key={y}
-        style={{
-          position: "absolute",
-          left: 20,
-          top: 40 + y * 12 * 1.057, // клетка + gap ~14px
-          fontSize: 20,
-          fontWeight: 500,
-          color: "#555",
-        }}
-      >
-        {y}
-      </div>
     );
   }
 
@@ -73,26 +58,20 @@ export async function GET(request: NextRequest) {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          alignItems: "flex-start",
+          alignItems: "center",
           background: "#fff",
-          paddingTop: 220, // увеличенный отступ сверху
+          paddingTop: 220,
           paddingBottom: 140,
-          position: "relative",
           fontFamily: "system-ui, sans-serif",
         }}
       >
-        {yearLabels}
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${COLS}, 14px)`,
-            gap: "3px",
-            marginLeft: 60,
-          }}
+        <svg
+          width={COLS * cell}
+          height={ROWS * cell}
+          style={{ marginLeft: 90 }}
         >
-          {cells}
-        </div>
+          {circles}
+        </svg>
       </div>
     ),
     { width, height }
