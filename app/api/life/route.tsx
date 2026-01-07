@@ -26,68 +26,54 @@ export async function GET(request: NextRequest) {
     birthdayWeeks.add(Math.floor((bday.getTime() - startDate.getTime()) / msPerWeek));
   }
 
- function renderGrid({ years, weeksAfterBirthday }: { years: number, weeksAfterBirthday: number }) {
-  const cols = 52;
-  const cell = 22;
-  const gap = 6;
+  const circles = [];
+  const cell = 12;
+  const r = 5;
 
-  const startX = 80;
-  const startY = 120;
+  for (let i = 0; i < COLS * ROWS; i++) {
+    const row = Math.floor(i / COLS);
+    const col = i % COLS;
+    let fill = "#e5e5e5";
 
-  let svg = '';
+    if (i < weeksLived) fill = birthdayWeeks.has(i) ? "#d32f2f" : "#000";
+    else if (i === weeksLived) fill = "#f57c00";
+    else if (birthdayWeeks.has(i)) fill = "#d32f2f";
 
-  for (let y = 0; y <= years; y++) {
-    for (let w = 0; w < cols; w++) {
-      const x = startX + w * (cell + gap);
-      const yy = startY + y * (cell + gap);
-
-      const filled =
-        y < years ||
-        (y === years && w <= weeksAfterBirthday);
-
-      svg += `
-        <circle
-          cx="${x}"
-          cy="${yy}"
-          r="${cell / 2}"
-          fill="${filled ? '#ff4b4b' : '#d0d0d0'}"
-        />
-      `;
-    }
+    circles.push(
+      <circle
+        key={i}
+        cx={col * cell}
+        cy={row * cell}
+        r={r}
+        fill={fill}
+      />
+    );
   }
 
-  return svg;
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          background: "#fff",
+          paddingTop: 220,
+          paddingBottom: 140,
+          fontFamily: "system-ui, sans-serif",
+        }}
+      >
+        <svg
+          width={COLS * cell}
+          height={ROWS * cell}
+          style={{ marginLeft: 90 }}
+        >
+          {circles}
+        </svg>
+      </div>
+    ),
+    { width, height }
+  );
 }
-
-return new Response(
-  `
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600">
-  <rect width="100%" height="100%" fill="black" />
-
-  <!-- Верхний отступ под часы -->
-  <g transform="translate(0, 220)">
-    
-    <!-- Текст возраста -->
-    <text
-      x="50%"
-      y="40"
-      text-anchor="middle"
-      fill="white"
-      font-size="48"
-      font-family="Inter, system-ui"
-    >
-      ${years} лет — неделя ${weeksAfterBirthday + 1}
-    </text>
-
-    <!-- сетка жизни -->
-    ${renderGrid({ years, weeksAfterBirthday })}
-  </g>
-</svg>
-`,
-  {
-    headers: {
-      'Content-Type': 'image/svg+xml; charset=utf-8',
-      'Cache-Control': 'no-cache'
-    }
-  }
-);
