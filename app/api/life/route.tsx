@@ -50,30 +50,35 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          background: "#fff",
-          paddingTop: 220,
-          paddingBottom: 140,
-          fontFamily: "system-ui, sans-serif",
-        }}
-      >
-        <svg
-          width={COLS * cell}
-          height={ROWS * cell}
-          style={{ marginLeft: 90 }}
-        >
-          {circles}
-        </svg>
-      </div>
-    ),
-    { width, height }
-  );
-}
+return new Response(
+  `
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600">
+  <rect width="100%" height="100%" fill="black" />
+
+  <!-- Верхний отступ под часы -->
+  <g transform="translate(0, 220)">
+    
+    <!-- Текст возраста -->
+    <text
+      x="50%"
+      y="40"
+      text-anchor="middle"
+      fill="white"
+      font-size="48"
+      font-family="Inter, system-ui"
+    >
+      ${years} лет — неделя ${weeksAfterBirthday + 1}
+    </text>
+
+    <!-- сетка жизни -->
+    ${renderGrid({ years, weeksAfterBirthday })}
+  </g>
+</svg>
+`,
+  {
+    headers: {
+      'Content-Type': 'image/svg+xml; charset=utf-8',
+      'Cache-Control': 'no-cache'
+    }
+  }
+);
