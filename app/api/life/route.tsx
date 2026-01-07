@@ -26,29 +26,38 @@ export async function GET(request: NextRequest) {
     birthdayWeeks.add(Math.floor((bday.getTime() - startDate.getTime()) / msPerWeek));
   }
 
-  const circles = [];
-  const cell = 14;
-  const r = 5;
+ function renderGrid({ years, weeksAfterBirthday }: { years: number, weeksAfterBirthday: number }) {
+  const cols = 52;
+  const cell = 22;
+  const gap = 6;
 
-  for (let i = 0; i < COLS * ROWS; i++) {
-    const row = Math.floor(i / COLS);
-    const col = i % COLS;
-    let fill = "#e5e5e5";
+  const startX = 80;
+  const startY = 120;
 
-    if (i < weeksLived) fill = birthdayWeeks.has(i) ? "#d32f2f" : "#000";
-    else if (i === weeksLived) fill = "#f57c00";
-    else if (birthdayWeeks.has(i)) fill = "#d32f2f";
+  let svg = '';
 
-    circles.push(
-      <circle
-        key={i}
-        cx={col * cell}
-        cy={row * cell}
-        r={r}
-        fill={fill}
-      />
-    );
+  for (let y = 0; y <= years; y++) {
+    for (let w = 0; w < cols; w++) {
+      const x = startX + w * (cell + gap);
+      const yy = startY + y * (cell + gap);
+
+      const filled =
+        y < years ||
+        (y === years && w <= weeksAfterBirthday);
+
+      svg += `
+        <circle
+          cx="${x}"
+          cy="${yy}"
+          r="${cell / 2}"
+          fill="${filled ? '#ff4b4b' : '#d0d0d0'}"
+        />
+      `;
+    }
   }
+
+  return svg;
+}
 
 return new Response(
   `
