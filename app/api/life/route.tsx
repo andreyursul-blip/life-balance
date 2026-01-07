@@ -1,93 +1,97 @@
-import { NextResponse } from "next/server";
+import { ImageResponse } from "next/og";
+import type { NextRequest } from "next/server";
 
-const BIRTHDATE = new Date("1996-12-04T00:00:00");
+export const runtime = "edge";
 
-// максимальный возраст на шкале (лет)
-const MAX_YEARS = 90;
-const WEEKS_IN_YEAR = 52;
+export async function GET(request: NextRequest) {
+  const width = 1179;
+  const height = 2556;
 
-function getProgress() {
-  const now = new Date();
-  const diffMs = now.getTime() - BIRTHDATE.getTime();
+  // ---- ТВОИ ДАННЫЕ ----
+  const BIRTH_DAY = 4;
+  const BIRTH_MONTH = 11; // декабрь = 11
+  const BIRTH_YEAR = 1996;
 
-  const weeksLived = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7));
+  const COLS = 52;
+  const ROWS = 90;
 
-  const years = Math.floor(weeksLived / WEEKS_IN_YEAR);
-  const weekOfYear = weeksLived % WEEKS_IN_YEAR;
+  const TOP_PADDING = 320; // для лок-экрана iOS
 
-  return { years, weekOfYear, weeksLived };
-}
+  const startDate = new Date(BIRTH_YEAR, BIRTH_MONTH, BIRTH_DAY);
+  const today = new Date();
 
-export async function GET() {
-  const { years, weekOfYear, weeksLived } = getProgress();
+  const msPerWeek = 1000 * 60 * 60 * 24 * 7;
+  const weeksLived = Math.floor(
+    (today.getTime() - startDate.getTime()) / msPerWeek
+  );
 
-  const cell = 18;
-  const gap = 6;
+  // ---- НЕДЕЛИ ДР ----
+  const birthdayWeeks = new Set<number>();
 
-  const startX = 140; // оставляем место под подписи лет
-  const startY = 260; // отступ под часы
+  for (let age = 0; age < ROWS; age++) {
+    const year = BIRTH_YEAR + age;
+    const bday = new Date(year, BIRTH_MONTH, BIRTH_DAY);
 
-  let circles = "";
-  let labels = "";
+    const w = Math.floor(
+      (bday.getTime() - startDate.getTime()) / msPerWeek
+    );
 
-  let weekIndex = 0;
-
-  for (let y = 0; y < MAX_YEARS; y++) {
-    // подпись года слева
-    labels += `
-      <text
-        x="${startX - 60}"
-        y="${startY + y * (cell + gap) + 6}"
-        font-size="20"
-        text-anchor="end"
-        fill="#777"
-      >
-        ${y}
-      </text>
-    `;
-
-    for (let w = 0; w < WEEKS_IN_YEAR; w++) {
-      const x = startX + w * (cell + gap);
-      const yy = startY + y * (cell + gap);
-
-      const filled = weekIndex <= weeksLived;
-
-      const color =
-        filled
-          ? (y === years && w === weekOfYear ? "#ff9900" : "#ff4040")
-          : "#d4d4d4";
-
-      circles += `
-        <circle
-          cx="${x}"
-          cy="${yy}"
-          r="${cell / 2}"
-          fill="${color}"
-        />
-      `;
-
-      weekIndex++;
-    }
+    birthdayWeeks.add(w);
   }
 
-  const svg = `
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="1300"
-    height="2400"
-    viewBox="0 0 1300 2400"
-  >
-    <rect width="100%" height="100%" fill="white" />
+  // ---- РЕНДЕР ТОЧЕК ----
+  const cells = [];
 
-    ${labels}
-    ${circles}
-  </svg>
-  `;
+  for (let w = 0; w < COLS * ROWS; w++) {
+    let bg = "#e5e5e5"; // будущие недели
 
-  return new NextResponse(svg, {
-    headers: {
-      "Content-Type": "image/svg+xml",
-      "Cache-Control": "no-store",
-    },
-  });
+    if (w < weeksLived) {
+      bg = birthdayWeeks.has(w) ? "#d32f2f" : "#000000"; // прожитые
+    } else if (w === weeksLived) {
+      bg = "#f57c00"; // текущая неделя
+    } else if (birthdayWeeks.has(w)) {
+      bg = "#d32f2f"; // будущие ДР
+    }
+
+    cells.push(
+      <div
+        key={w}
+        style={{
+          width: 10,
+          height: 10,
+          background: bg,
+          borderRadius: "50%",
+        }}
+      />
+    );
+  }
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          background: "#ffffff",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          paddingTop: TOP_PADDING,
+          paddingBottom: 140,
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${COLS}, 13px)`,
+            gap: "3px",
+            justifyContent: "center",
+          }}
+        >
+          {cells}
+        </div>
+      </div>
+    ),
+    { width, height }
+  );
 }
