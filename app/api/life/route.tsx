@@ -2,67 +2,85 @@ import { NextResponse } from "next/server";
 
 const BIRTHDATE = new Date("1996-12-04T00:00:00");
 
-function getLifeProgress() {
-  const now = new Date();
+// максимальный возраст на шкале (лет)
+const MAX_YEARS = 90;
+const WEEKS_IN_YEAR = 52;
 
+function getProgress() {
+  const now = new Date();
   const diffMs = now.getTime() - BIRTHDATE.getTime();
+
   const weeksLived = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7));
 
-  const years = Math.floor(weeksLived / 52);
-  const weeksAfterBirthday = weeksLived % 52;
+  const years = Math.floor(weeksLived / WEEKS_IN_YEAR);
+  const weekOfYear = weeksLived % WEEKS_IN_YEAR;
 
-  return { years, weeksAfterBirthday };
+  return { years, weekOfYear, weeksLived };
 }
 
-function renderGrid({
-  years,
-  weeksAfterBirthday,
-}: {
-  years: number;
-  weeksAfterBirthday: number;
-}) {
-  const cols = 52;
-  const cell = 22;
+export async function GET() {
+  const { years, weekOfYear, weeksLived } = getProgress();
+
+  const cell = 18;
   const gap = 6;
 
-  const startX = 80;
-  const startY = 120;
+  const startX = 140; // оставляем место под подписи лет
+  const startY = 260; // отступ под часы
 
-  let svg = "";
+  let circles = "";
+  let labels = "";
 
-  for (let y = 0; y <= 90; y++) {
-    for (let w = 0; w < cols; w++) {
+  let weekIndex = 0;
+
+  for (let y = 0; y < MAX_YEARS; y++) {
+    // подпись года слева
+    labels += `
+      <text
+        x="${startX - 60}"
+        y="${startY + y * (cell + gap) + 6}"
+        font-size="20"
+        text-anchor="end"
+        fill="#777"
+      >
+        ${y}
+      </text>
+    `;
+
+    for (let w = 0; w < WEEKS_IN_YEAR; w++) {
       const x = startX + w * (cell + gap);
       const yy = startY + y * (cell + gap);
 
-      const filled =
-        y < years || (y === years && w <= weeksAfterBirthday);
+      const filled = weekIndex <= weeksLived;
 
-      svg += `
+      const color =
+        filled
+          ? (y === years && w === weekOfYear ? "#ff9900" : "#ff4040")
+          : "#d4d4d4";
+
+      circles += `
         <circle
           cx="${x}"
           cy="${yy}"
           r="${cell / 2}"
-          fill="${filled ? "#ff4b4b" : "#d3d3d3"}"
+          fill="${color}"
         />
       `;
+
+      weekIndex++;
     }
   }
 
-  return svg;
-}
-
-export async function GET() {
-  const { years, weeksAfterBirthday } = getLifeProgress();
-
   const svg = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="2000">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="1300"
+    height="2400"
+    viewBox="0 0 1300 2400"
+  >
     <rect width="100%" height="100%" fill="white" />
 
-    <!-- отступ под часы -->
-    <g transform="translate(0, 300)">
-      ${renderGrid({ years, weeksAfterBirthday })}
-    </g>
+    ${labels}
+    ${circles}
   </svg>
   `;
 
