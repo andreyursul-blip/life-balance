@@ -4,54 +4,33 @@ import type { NextRequest } from "next/server";
 export const runtime = "edge";
 
 export async function GET(request: NextRequest) {
-  const width = 1179;
+  const width = 1179;  // айфон 15 Pro
   const height = 2556;
 
-  // ---- ТВОИ ДАННЫЕ ----
   const BIRTH_DAY = 4;
-  const BIRTH_MONTH = 11; // декабрь = 11
-  const BIRTH_YEAR = 1996;
+  const BIRTH_MONTH = 11; // 0-based, декабрь = 11
+  const START_YEAR = 1996; // начинаем с твоего дня рождения
 
-  const COLS = 52;
-  const ROWS = 90;
-
-  const TOP_PADDING = 320; // для лок-экрана iOS
-
-  const startDate = new Date(BIRTH_YEAR, BIRTH_MONTH, BIRTH_DAY);
   const today = new Date();
-
+  const startDate = new Date(START_YEAR, BIRTH_MONTH, BIRTH_DAY);
   const msPerWeek = 1000 * 60 * 60 * 24 * 7;
-  const weeksLived = Math.floor(
-    (today.getTime() - startDate.getTime()) / msPerWeek
-  );
+  const weeksLived = Math.floor((today.getTime() - startDate.getTime()) / msPerWeek);
 
-  // ---- НЕДЕЛИ ДР ----
+  const COLS = 52;  // недель в году
+  const ROWS = 90;  // лет
+
   const birthdayWeeks = new Set<number>();
-
   for (let age = 0; age < ROWS; age++) {
-    const year = BIRTH_YEAR + age;
+    const year = START_YEAR + age;
     const bday = new Date(year, BIRTH_MONTH, BIRTH_DAY);
-
-    const w = Math.floor(
-      (bday.getTime() - startDate.getTime()) / msPerWeek
-    );
-
-    birthdayWeeks.add(w);
+    birthdayWeeks.add(Math.floor((bday.getTime() - startDate.getTime()) / msPerWeek));
   }
 
-  // ---- РЕНДЕР ТОЧЕК ----
   const cells = [];
-
   for (let w = 0; w < COLS * ROWS; w++) {
-    let bg = "#e5e5e5"; // будущие недели
-
-    if (w < weeksLived) {
-      bg = birthdayWeeks.has(w) ? "#d32f2f" : "#000000"; // прожитые
-    } else if (w === weeksLived) {
-      bg = "#f57c00"; // текущая неделя
-    } else if (birthdayWeeks.has(w)) {
-      bg = "#d32f2f"; // будущие ДР
-    }
+    let bg = "#000"; // черные для прожитых недель
+    if (w === weeksLived) bg = "#f57c00"; // текущая неделя оранжевая
+    if (birthdayWeeks.has(w)) bg = "#d32f2f"; // дни рождения красные
 
     cells.push(
       <div
@@ -66,26 +45,50 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  // Добавляем подписи лет слева
+  const yearLabels = [];
+  for (let y = 0; y <= ROWS; y += 10) {
+    yearLabels.push(
+      <div
+        key={y}
+        style={{
+          position: "absolute",
+          left: 20,
+          top: 40 + y * 12 * 1.057, // клетка + gap ~14px
+          fontSize: 20,
+          fontWeight: 500,
+          color: "#555",
+        }}
+      >
+        {y}
+      </div>
+    );
+  }
+
   return new ImageResponse(
     (
       <div
         style={{
           width: "100%",
           height: "100%",
-          background: "#ffffff",
           display: "flex",
           flexDirection: "column",
-          alignItems: "center",
-          paddingTop: TOP_PADDING,
+          alignItems: "flex-start",
+          background: "#fff",
+          paddingTop: 220, // увеличенный отступ сверху
           paddingBottom: 140,
+          position: "relative",
+          fontFamily: "system-ui, sans-serif",
         }}
       >
+        {yearLabels}
+
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: `repeat(${COLS}, 13px)`,
+            gridTemplateColumns: `repeat(${COLS}, 14px)`,
             gap: "3px",
-            justifyContent: "center",
+            marginLeft: 60,
           }}
         >
           {cells}
