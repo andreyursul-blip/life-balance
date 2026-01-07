@@ -1,63 +1,80 @@
-import { ImageResponse } from '@vercel/og';
-import type { NextRequest } from 'next/server';
+import { ImageResponse } from "next/og";
+import type { NextRequest } from "next/server";
 
-export const runtime = 'edge';
+export const runtime = "edge";
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
+  const width = 1200;
+  const height = 2556;
 
-  const width = Number(searchParams.get('width') || '1200');
-  const height = Number(searchParams.get('height') || '2556');
+  const BIRTH_DAY = 4;
+  const BIRTH_MONTH = 11;
+  const birthDate = new Date(1996, BIRTH_MONTH, BIRTH_DAY); // 04.12.1996
 
-  // Дата рождения
-  const birthDate = new Date(1996, 11, 4); // 4 декабря 1996
   const today = new Date();
   const msPerWeek = 1000 * 60 * 60 * 24 * 7;
   const weeksLived = Math.floor((today.getTime() - birthDate.getTime()) / msPerWeek);
 
-  // Недели дней рождений (красные точки)
+  const COLS = 52;
+  const ROWS = 90;
+
   const birthdayWeeks = new Set<number>();
-  for (let age = 1; age <= 89; age++) {
-    const bday = new Date(1996 + age, 11, 4);
+  for (let age = 0; age < ROWS; age++) {
+    const year = 1996 + age;
+    const bday = new Date(year, BIRTH_MONTH, BIRTH_DAY);
     birthdayWeeks.add(Math.floor((bday.getTime() - birthDate.getTime()) / msPerWeek));
   }
 
-  const COLS = 52;
-  const ROWS = 90;
-  const DOT_RADIUS = 5;
-  const GAP = 3;
-  const CELL = DOT_RADIUS * 2 + GAP;
+  const circles = [];
+  const cell = 14;
+  const r = 5;
 
-  const LEFT_MARGIN = 60;   // место под цифры
-  const TOP_MARGIN = 180;   // большой отступ под часы + Dynamic Island
-  const RIGHT_MARGIN = 20;
-  const BOTTOM_MARGIN = 60;
+  for (let i = 0; i < COLS * ROWS; i++) {
+    const row = Math.floor(i / COLS);
+    const col = i % COLS;
+    let fill = "#e5e5e5";
 
-  const gridWidth = COLS * CELL;
-  const gridHeight = ROWS * CELL;
-  const totalWidth = LEFT_MARGIN + gridWidth + RIGHT_MARGIN;
-  const totalHeight = TOP_MARGIN + gridHeight + BOTTOM_MARGIN;
+    if (i < weeksLived) fill = birthdayWeeks.has(i) ? "#d32f2f" : "#000";
+    else if (i === weeksLived) fill = "#f57c00";
+    else if (birthdayWeeks.has(i)) fill = "#d32f2f";
+
+    circles.push(
+      <circle
+        key={i}
+        cx={col * cell}
+        cy={row * cell}
+        r={r}
+        fill={fill}
+      />
+    );
+  }
 
   return new ImageResponse(
     (
       <div
         style={{
-          width: '100%',
-          height: '100%',
-          background: '#ffffff',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          paddingTop: TOP_MARGIN,
-          paddingBottom: BOTTOM_MARGIN,
-          fontFamily: 'system-ui, sans-serif',
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          background: "#fff",
+          paddingTop: 220,   // ← увеличил отступ сверху (под часы)
+          paddingBottom: 140,
+          fontFamily: "system-ui, sans-serif",
         }}
       >
-        <svg width={gridWidth} height={gridHeight} viewBox={`0 0 ${gridWidth} ${gridHeight}`}>
-          {/* Подписи возраста слева (0 напротив первой строки = 1996–1997) */}
+        {/* Заголовок убрал полностью */}
+
+        <svg
+          width={COLS * cell}
+          height={ROWS * cell}
+          style={{ marginLeft: 90 }}
+        >
+          {/* Подписи возраста (0 напротив первой строки) */}
           {Array.from({ length: 10 }).map((_, d) => {
             const label = d * 10;
-            const y = d * 10 * CELL + CELL / 2;
+            const y = d * 10 * cell + cell / 2 + 10; // ← подправил позицию Y, чтобы не поехало по диагонали
             return (
               <text
                 key={d}
@@ -73,25 +90,7 @@ export async function GET(request: NextRequest) {
             );
           })}
 
-          {/* Точки */}
-          {Array.from({ length: COLS * ROWS }).map((_, w) => {
-            const row = Math.floor(w / COLS);
-            const col = w % COLS;
-            const cx = col * CELL + CELL / 2;
-            const cy = row * CELL + CELL / 2;
-
-            let fill = '#e5e5e5'; // будущее
-
-            if (w < weeksLived) {
-              fill = birthdayWeeks.has(w) ? '#d32f2f' : '#000000';
-            } else if (w === weeksLived) {
-              fill = '#f57c00'; // текущая неделя
-            } else if (birthdayWeeks.has(w)) {
-              fill = '#d32f2f';
-            }
-
-            return <circle key={w} cx={cx} cy={cy} r={DOT_RADIUS} fill={fill} />;
-          })}
+          {circles}
         </svg>
       </div>
     ),
