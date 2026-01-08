@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const height = 2556;
 
   // старт строго с дня рождения
-  const startDate = new Date(1996, 11, 4); // 04.12.1996
+  const startDate = new Date(1996, 12, 4); // 04.12.1996
   const today = new Date();
 
   const msPerWeek = 1000 * 60 * 60 * 24 * 7;
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     justifyContent: "flex-start",
     alignItems: "center",
     background: "#fff",
-    paddingTop: 280,
+    paddingTop: 320,
     paddingBottom: 160,
   }}
 >
