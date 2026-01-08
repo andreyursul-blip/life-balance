@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
           display: "flex",
           justifyContent: "center",
           background: "#fff",
-          paddingTop: 260, // безопасно под часы
+          paddingTop: 250, // безопасно под часы
           paddingBottom: 160,
         }}
       >
