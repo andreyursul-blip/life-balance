@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     justifyContent: "flex-start",
     alignItems: "center",
     background: "#fff",
-    paddingTop: 260,
+    paddingTop: 280,
     paddingBottom: 160,
   }}
 >
