@@ -45,24 +45,30 @@ export async function GET(request: NextRequest) {
 
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          justifyContent: "center",
-          background: "#fff",
-          paddingTop: 250, // безопасно под часы
-          paddingBottom: 160,
-        }}
-      >
-        <svg
-          width={COLS * cell}
-          height={ROWS * cell}
-        >
-          {circles}
-        </svg>
-      </div>
+     <div
+  style={{
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    background: "#fff",
+    paddingTop: 260,
+    paddingBottom: 160,
+  }}
+>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "center",
+      width: "100%",
+    }}
+  >
+    <svg width={COLS * cell} height={ROWS * cell}>
+      {circles}
+    </svg>
+  </div>
+</div>
     ),
     { width, height }
   );
