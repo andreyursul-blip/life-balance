@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const height = 2556;
 
   // старт строго с дня рождения
-  const startDate = new Date(1996, 12, 4); // 04.12.1996
+  const startDate = new Date(1996, 12, 4); // ✅ 04.12.1996
   const today = new Date();
 
   const msPerWeek = 1000 * 60 * 60 * 24 * 7;
@@ -45,55 +45,52 @@ export async function GET(request: NextRequest) {
 
   return new ImageResponse(
     (
-     <div
-  style={{
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    background: "#fff",
-    paddingTop: 420,
-    paddingBottom: 100,
-  }}
->
-  <div
-    style={{
-      display: "flex",
-      justifyContent: "center",
-      width: "100%",
-    }}
-  >
-    <svg
-  width={COLS * cell + 80}
-  height={ROWS * cell}
->
-  {/* подписи лет */}
-  {Array.from({ length: ROWS }).map((_, row) => {
-    if (row % 10 !== 0) return null;
-
-    return (
-      <text
-        key={row}
-        x={60}
-        y={row * cell + cell / 2 + 4}
-        textAnchor="end"
-        fontSize="18"
-        fill="#999"
-        fontFamily="system-ui, sans-serif"
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          justifyContent: "flex-start",
+          alignItems: "center",
+          background: "#fff",
+          paddingTop: 420,
+          paddingBottom: 100,
+        }}
       >
-        {row}
-      </text>
-    );
-  })}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+          }}
+        >
+          <svg width={COLS * cell + 80} height={ROWS * cell}>
+            {/* подписи лет */}
+            {Array.from({ length: ROWS }).map((_, row) => {
+              if (row % 10 !== 0) return null;
 
-  {/* точки */}
-  <g transform="translate(80, 0)">
-    {circles}
-  </g>
-</svg>
-  </div>
-</div>
+              return (
+                <text
+                  key={row}
+                  x={60}
+                  y={row * cell + cell / 2 + 5}
+                  textAnchor="end"
+                  fontSize="18"
+                  fill="#999"
+                  fontFamily="system-ui, sans-serif"
+                >
+                  {row}
+                </text>
+              );
+            })}
+
+            {/* точки */}
+            <g transform="translate(80, 0)">
+              {circles}
+            </g>
+          </svg>
+        </div>
+      </div>
     ),
     { width, height }
   );
