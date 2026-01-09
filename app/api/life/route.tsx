@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
   const COLS = 52;
   const ROWS = 90;
 
-  const cell = 16;
-  const r = 5.5;
+  const cell = 18;
+  const r = 7;
 
   const circles = [];
 
@@ -53,8 +53,8 @@ export async function GET(request: NextRequest) {
     justifyContent: "flex-start",
     alignItems: "center",
     background: "#fff",
-    paddingTop: 320,
-    paddingBottom: 160,
+    paddingTop: 360,
+    paddingBottom: 130,
   }}
 >
   <div
